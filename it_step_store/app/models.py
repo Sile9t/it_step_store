@@ -117,8 +117,14 @@ class OrderItem(DefaultModel):
         on_delete=models.CASCADE,
         verbose_name="product of the order item",
     )
-    quantity = models.IntegerField(default=0)
+    quantity = models.PositiveIntegerField(default=1)
     status = models.CharField(max_length=20, choices=ORDER_ITEM_STATUSES, default="P")
+
+    @property
+    def item_total(self):
+        if self.product:
+            return self.product.cost * self.quantity
+        return 0
 
 class Basket(DefaultModel):
     owner = models.OneToOneField(
@@ -132,6 +138,7 @@ class BasketItem(DefaultModel):
     basket = models.ForeignKey(
         Basket,
         on_delete=models.CASCADE,
+        related_name="items",
     )
     product = models.ForeignKey(
         Product,
@@ -139,6 +146,16 @@ class BasketItem(DefaultModel):
         verbose_name="related product",
         null=True,
     )
+    quantity = models.PositiveIntegerField(default=1)
+
+    class Meta(DefaultModel.Meta):
+        unique_together = [['basket', 'product']]
+
+    @property
+    def item_total(self):
+        if self.product:
+            return self.product.cost * self.quantity
+        return 0
 
 class Favorite(DefaultModel):
     user = models.ForeignKey(
@@ -149,3 +166,6 @@ class Favorite(DefaultModel):
         Product,
         on_delete=models.RESTRICT,
     )
+
+    class Meta(DefaultModel.Meta):
+        unique_together = [['user', 'product']]
